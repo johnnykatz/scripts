@@ -1,5 +1,15 @@
 <?php
 
+//conexion
+$conn_string = "host=localhost port=5432 dbname=BigD user=postgres password=postgres";
+$conn = pg_connect($conn_string);
+
+//parametros
+$id_usuario = 1;
+$fuente_datos_id = 2;
+
+
+
 //tipo de documento 4 es null porque hay registros que tienen tipo de documento en blanco.
 $arrayTipoDocumento = array(
     "DNI-EC" => 1,
@@ -52,6 +62,9 @@ $result_padron = pg_query($conn, $sql);
 pg_query($conn, 'BEGIN work;');
 $i = 0;
 while ($row = pg_fetch_array($result_padron)) {
+    if ($i % 1000 == 0) {
+        echo "\n" . $i . " Lineas y procesando... ";
+    }
     $result = pg_query($conn, "select nextval('personas_id_seq')");
     $id = pg_fetch_row($result);
     $id_persona = $id[0];
@@ -123,7 +136,7 @@ while ($row = pg_fetch_array($result_padron)) {
 }
 pg_query($conn, 'COMMIT');
 pg_close($conn);
-echo "<script>alert('El proceso termino con exito');</script>";
+echo "\n El proceso termino con exito.";
 
 function fechaComoDB($fecha) {
     if ($fecha != "") {
