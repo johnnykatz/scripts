@@ -1,7 +1,11 @@
 <?php
+ini_set('upload_max_filesize', '50M');
+ini_set("memory_limit", "2000M");
+set_time_limit(0);
+
 
 //conexion
-$conn_string = "host=localhost port=5432 dbname=BigD user=postgres password=postgres";
+$conn_string = "host=localhost port=5432 dbname=BigD_prueba user=postgres password=postgres";
 $conn = pg_connect($conn_string);
 
 //parametros
@@ -10,7 +14,6 @@ $fuente_datos_id = 2;
 
 
 
-//tipo de documento 4 es null porque hay registros que tienen tipo de documento en blanco.
 $arrayTipoDocumento = array(
     "DNI-EC" => 1,
     "LT" => 3,
@@ -62,7 +65,7 @@ $result_padron = pg_query($conn, $sql);
 pg_query($conn, 'BEGIN work;');
 $i = 0;
 while ($row = pg_fetch_array($result_padron)) {
-    if ($i % 1000 == 0) {
+    if ($i % 10000 == 0) {
         echo "\n" . $i . " Lineas y procesando... ";
     }
     $result = pg_query($conn, "select nextval('personas_id_seq')");
@@ -136,7 +139,7 @@ while ($row = pg_fetch_array($result_padron)) {
 }
 pg_query($conn, 'COMMIT');
 pg_close($conn);
-echo "\n El proceso termino con exito.";
+echo "\nEl proceso termino con exito. ".$i." lineas procesadas.";
 
 function fechaComoDB($fecha) {
     if ($fecha != "") {

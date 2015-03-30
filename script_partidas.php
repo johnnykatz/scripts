@@ -2,6 +2,10 @@
 
 //Importa datos del csv partidas 
 
+ini_set('upload_max_filesize', '50M');
+ini_set("memory_limit", "2000M");
+set_time_limit(0);
+
 $conn_string = "host=localhost port=5432 dbname=BigD user=postgres password=postgres";
 $conn = pg_connect($conn_string);
 
@@ -94,10 +98,11 @@ if (($fichero = fopen("partidas.csv", "r")) !== FALSE) {
     pg_query($conn, 'BEGIN work;');
     $i = 0;
     while (($datos = fgetcsv($fichero, 1000, ";")) !== FALSE) {
-        if ($i % 1000 == 0) {
-            echo "\n" . $i . " Lineas y procesando... ";
-        }
         if ($i > 0) {
+            if ($i % 1000 == 0) {
+                echo "\n" . $i . " Lineas y procesando... ";
+            }
+
             //elimino segmentos entre parentesis de la calle
             $calle = preg_replace("/\((.*?)\)/i", "", $datos[12]);
             $calle = preg_replace("(')", "", $calle);
@@ -272,7 +277,7 @@ if (($fichero = fopen("partidas.csv", "r")) !== FALSE) {
     }
     pg_query($conn, 'COMMIT');
     pg_close($conn);
-    echo "\n El proceso termino con exito.";
+    echo "\n El proceso termino con exito. " . $i . " lineas procesadas.";
 } else {
     echo "error";
 }

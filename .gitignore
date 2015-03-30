@@ -1,0 +1,14 @@
+
+# netbeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+/partidas_prueba.xlsx
+/partidas_prueba.csv
+/patentes_prueba.csv
+/patentes_prueba.xlsx
+/patentes_prueba_2.csv

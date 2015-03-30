@@ -15,9 +15,16 @@ and open the template in the editor.
         <?php
         if (isset($_POST['submit'])) {
 //            $arrayCalleNumero = preg_split('/([A-Z|Ñ ][0-9])/',$_POST['calle']);
-
+            $domicilio=preg_replace("/\(?[0-9](.*?)\)/i", "", $_POST['calle']);
+            $domicilio = preg_replace("(')", "", $domicilio);
+            $domicilio=  explode(" ",$domicilio);
+            $num=count($domicilio);
+            echo $domicilio[0];echo "<br>";
+            echo $domicilio[$num-1];
+            echo "<br>";
+            
             $arrayCalleNumero = preg_split('/([A-Z|Ñ ])(?=\d)/',$_POST['calle']);
-
+            
             print_r($arrayCalleNumero);
         }
         ?>
