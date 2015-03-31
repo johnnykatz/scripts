@@ -5,7 +5,7 @@ set_time_limit(0);
 
 
 //conexion
-$conn_string = "host=localhost port=5432 dbname=BigD_prueba user=postgres password=postgres";
+$conn_string = "host=localhost port=5432 dbname=BigD_real user=postgres password=postgres";
 $conn = pg_connect($conn_string);
 
 //parametros
@@ -72,8 +72,8 @@ while ($row = pg_fetch_array($result_padron)) {
     $id = pg_fetch_row($result);
     $id_persona = $id[0];
     $tipo_documento_id = $arrayTipoDocumento[$row[8]];
-    $apellido = preg_replace("(')", " ", utf8_encode(trim($row[2])));
-    $nombre = preg_replace("(')", " ", utf8_encode(trim($row[3])));
+    $apellido = preg_replace("(')", " ", (trim($row[2])));
+    $nombre = preg_replace("(')", " ", (trim($row[3])));
     $fecha_nacimiento = fechaComoDB(trim($row[13]));
     if ($fecha_nacimiento != false) {
         $sql = "INSERT INTO personas ("
