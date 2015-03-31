@@ -99,7 +99,7 @@ if (($fichero = fopen("partidas_prueba.csv", "r")) !== FALSE) {
     $i = 0;
     while (($datos = fgetcsv($fichero, 1000, ";")) !== FALSE) {
         if ($i > 0) {
-            if ($i % 1000 == 0) {
+            if ($i % 10000 == 0) {
                 echo "\n" . $i . " Lineas y procesando... ";
             }
 
