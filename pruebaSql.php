@@ -20,14 +20,11 @@ from  campania_encuesta_agrupador_pregunta agru order by agru.id asc";
 $result = pg_query($conn, $sql);
 
 while ($row = pg_fetch_array($result)) {
-    if($orden>110){
-        $tu=2;
-    }
     if ($row['multiple'] == 'f') {
 //        traigo todas las preguntas del agrupador para armar la cabecera
         $sql = "select pre.texto_pregunta,campania_encuesta_agrupador_pregunta_id,pre.id as pregunta_id
                     from   campania_encuesta_preguntas pre  
-                    where pre.campania_encuesta_agrupador_pregunta_id=" . $row['agrupador_id'] ;
+                    where pre.campania_encuesta_agrupador_pregunta_id=" . $row['agrupador_id'];
 
         $result_pregunta = pg_query($conn, $sql);
         while ($row_pregunta = pg_fetch_array($result_pregunta)) {
@@ -35,8 +32,7 @@ while ($row = pg_fetch_array($result)) {
             $array_orden[$row_pregunta['pregunta_id']] = $orden;
             $orden++;
         }
-//        $orden++;
-        
+
         $cantidad_por_agrupador[] = array("id" => $row['agrupador_id'], "cantidad" => 1);
     } else {
         //busco la encuesta con mayor cantidad de campos para este agrupador
@@ -53,8 +49,7 @@ while ($row = pg_fetch_array($result)) {
 
         $result_cantidad_agrupador = pg_query($conn, $sql);
         $cantidad_agrupador = pg_fetch_row($result_cantidad_agrupador);
-        $cantidad_agrupador = $cantidad_agrupador[0];//maxima cantidad de este agrupador que puede tener una encuesta
-
+        $cantidad_agrupador = $cantidad_agrupador[0]; //maxima cantidad de este agrupador que puede tener una encuesta
         //traigo las preguntas de este agrupador y las creo la cantidad de $cantidad_agrupador
 
         $sql = "select pre.texto_pregunta,pre.id as pregunta_id
@@ -70,32 +65,46 @@ while ($row = pg_fetch_array($result)) {
             $array_orden[$row_pregunta_agrupador['pregunta_id']] = $orden;
             $orden++;
         }
-//        $orden++;
-        $contador_preguntas_reales = 0;
+        $contador_preguntas_reales = 1;
 
         for ($i = 0; $i < $cantidad_agrupador; $i++) {
             foreach ($cabecera_agrupador as $pregunta) {
                 $cabecera[] = utf8_decode($pregunta);
                 $contador_preguntas_reales++;
-                if ($contador_preguntas_reales > $cantidad_agrupador) {
-//                    $array_orden["a"] = $orden;
+                if ($contador_preguntas_reales >= $cantidad_agrupador) {
                     $orden++;
                 }
-//                 $orden++;
             }
-//            $orden++;
         }
-//        $orden++;
         $cantidad_por_agrupador[] = array("id" => $row['agrupador_id'], "cantidad" => $cantidad_agrupador);
     }
 }
 
 $fila1 = ksort($array_orden);
+
 //traigo todas las encuestas
-$sql = "select id from campania_encuesta_resultado_cabecera where nrocuestionario='10001'";
+$sql = "select id from campania_encuesta_resultado_cabecera";
 $result_encuestas = pg_query($conn, $sql);
 
 while ($row_encuesta = pg_fetch_array($result_encuestas)) {
+
+    //consulto cuantas preguntas tiene la encuesta para saber si es la encuesta con error de 52 o la de 53
+    $sql = "select count(distinct(pre.id))
+                from campania_encuesta_preguntas pre
+                inner join campania_encuesta_pregunta_resultado_respuesta med
+                on med.campania_encuesta_pregunta_id=pre.id
+
+                inner join campania_encuesta_resultado_respuesta res
+                on res.id=med.campania_encuesta_resultado_respuesta_id
+
+                inner join campania_encuesta_resultado_cabecera cab 
+                on res.campania_encuesta_resultado_cabecera_id=cab.id
+                where cab.id=" . $row_encuesta['id'];
+    $result_cantidad_preguntas = pg_query($conn, $sql);
+    $cantidad_preguntas_encuesta = pg_fetch_row($result_cantidad_preguntas);
+    $cantidad_preguntas_encuesta = $cantidad_preguntas_encuesta[0];
+
+
 //    traigo los datos de una encuesta
     $fila = array();
     foreach ($cantidad_por_agrupador as $agrupador) {
@@ -150,40 +159,49 @@ while ($row_encuesta = pg_fetch_array($result_encuestas)) {
 
 
         if ($multiple == "t") {
-            $contador_preguntas_agrupador = 0;
-//            $cantidad_por_agrupador = 0;
+            $contador_preguntas_agrupador = 0; //cuanto para saber hasta donde puedo saber el orden por el 
+            //id de la pregunta, ya que los multiples se guardan solo una vez en el array orden y los siguientes lo saco
+            //sumando a esas posiciones
             while ($row_respuestas_agrupador = pg_fetch_array($result_respuestas_agrupador)) {
                 if ($contador_preguntas_agrupador < $cantidad_preguntas_agrupador) {
+                    //mientras sea el primer modulo de este agrupador puedo sacar als posiciones por id
                     $orden_correcto = $array_orden[$row_respuestas_agrupador['pregunta_id']];
                     $fila[$orden_correcto] = utf8_decode($row_respuestas_agrupador['textorespuesta']);
                     $contador_preguntas_agrupador++;
                     $orden_correcto_multiple = $orden_correcto;
+                    //guardo la ultima posicion de orden_correcto en orden_correcto_multiple para despues
+                    //sacar las posiciones sumando
                 } else {
+                    //cuando ya no puedo sacar el orden por array_orden lo saco sumando posiciones
                     $orden_correcto_multiple++;
                     $fila[$orden_correcto_multiple] = utf8_decode($row_respuestas_agrupador['textorespuesta']);
                     $contador_preguntas_agrupador++;
                 }
             }
             $faltante = ($cantidad_preguntas_agrupador * $agrupador['cantidad']) - $contador_preguntas_agrupador;
+
             if ($faltante > 0) {
+                //cuando el hay lugar para mas modulos de este agrupador y la encuesta no tiene datos, los
+                //completo con  ""
                 for ($m = 0; $m < $faltante; $m++) {
                     $orden_correcto_multiple++;
                     $fila[$orden_correcto_multiple] = "";
                 }
             }
         } else {
-//            $contador_preguntas_agrupador = 0;
             while ($row_respuestas_agrupador = pg_fetch_array($result_respuestas_agrupador)) {
                 $orden_correcto = $array_orden[$row_respuestas_agrupador['pregunta_id']];
-                $fila[$orden_correcto] = utf8_decode($row_respuestas_agrupador['textorespuesta']);
-//                $contador_preguntas_agrupador++;
+                if ($cantidad_preguntas_encuesta == 52 && $row_respuestas_agrupador['pregunta_id'] == 34) {
+                    //si es la encuesta de 52 preguntas y es el id de pregunta 34, osea un id menos del id que falta, lo
+                    //relleno con blanco 
+                    $fila[$orden_correcto] = utf8_decode($row_respuestas_agrupador['textorespuesta']);
+                    $orden_correcto++;
+                    $fila[$orden_correcto] = "";
+                } else {
+
+                    $fila[$orden_correcto] = utf8_decode($row_respuestas_agrupador['textorespuesta']);
+                }
             }
-//            $faltante = ($cantidad_preguntas_agrupador * $agrupador['cantidad']) - $contador_preguntas_agrupador;
-//            if ($faltante > 0) {
-//                for ($m = 0; $m < $faltante; $m++) {
-//                    $fila[] = "";
-//                }
-//            }
         }
     }
     $fila1 = ksort($fila);
@@ -192,12 +210,7 @@ while ($row_encuesta = pg_fetch_array($result_encuestas)) {
 
 
 
-
-
 pg_close($conn);
 
 include 'tablaExcel.php';
-
-
-//pg_query($conn, 'BEGIN work;');
 ?>
